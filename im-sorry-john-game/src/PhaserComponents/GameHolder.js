@@ -14,15 +14,18 @@ export const GameHolder = () => {
             parent: 'game container',
             width: window.innerWidth, //change this later
             height: window.innerHeight,
-            pixelArt: true,
+            // pixelArt: true,
             physics: {
                 default: 'arcade',
                 arcade: {
-                    gravity: {y:600},
-                    debug: true,
+                    gravity: {y:0},
+                    debug: false,
                 },
             },
             scene: [goMainMenu, goLevel1],
+            // scale: {
+            //     zoom: 0.5
+            // }
         }
         new Phaser.Game(config)
     })
