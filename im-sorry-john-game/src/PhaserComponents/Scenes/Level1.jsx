@@ -40,52 +40,121 @@ class Level1 extends Phaser.Scene{
 
         walls_layer.setCollisionByProperty({collides: true})
 
-        this.john = this.physics.add.sprite(this.centreX, this.centreY, 'john', 'john.png')
+        //create john
+        this.john = this.physics.add.sprite(this.centreX, this.centreY, 'john', 'walk_down1.png')
+        this.john.setScale(0.25)
         // this.john.setBodySize(this.john.body.width*0.5, this.john.body.height*0.5)
 
         this.physics.add.collider(this.john, walls_layer)
 
         this.anims.create({
-            key: 'john-idle-down',
-            frames: [{key: 'john', frame: 'john.png'}]
+            key: 'john-walk-down',
+            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_down', suffix:'.png'}),
+            frameRate: 15,
+            repeat: -1
         })
         this.anims.create({
-            key: 'john-run-down',
-            frames: this.anims.generateFrameNames('john', { start:2, end:8, prefix: 'image', suffix:'.png'}),
+            key: 'john-walk-up',
+            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_up', suffix:'.png'}),
+            frameRate: 15,
+            repeat: -1
+        })
+        this.anims.create({
+            key: 'john-walk-east',
+            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_east', suffix:'.png'}),
+            frameRate: 15,
+            repeat: -1
+        })
+        this.anims.create({
+            key: 'john-walk-west',
+            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_west', suffix:'.png'}),
             frameRate: 15,
             repeat: -1
         })
 
-        console.log(this.cameras.main.width)
+        this.anims.create({
+            key: 'john-idle',
+            frames: this.anims.generateFrameNames('john', { start:1, end:2, prefix: 'idle', suffix:'.png'}),
+            frameRate: 3,
+            repeat: -1
+        })
+        this.anims.create({
+            key: 'john-tp-out',
+            frames: this.anims.generateFrameNames('john', { start:1, end:16, prefix: 'teleport', suffix:'.png'}),
+            frameRate: 20,
+            repeat: 0
+        })
+        this.anims.create({
+            key: 'john-tp-in',
+            frames: this.anims.generateFrameNames('john', { start:17, end:31, prefix: 'teleport', suffix:'.png'}),
+            frameRate: 20,
+            repeat: 0
+        })
+
+        console.log(this.cameras.main.width,'hi')
+        this.john.isIdle = true
     }
 
     update(t,dt){
+        // console.log(this.john.isIdle)
+        const v = 150
+        // this.john.anims.play('john-idle')
 
-        if(this.controls.right?.isDown)
+        if(this.controls.right?.isDown && this.john.isIdle)
         {
-            this.john.setVelocity(100)
+            this.john.setVelocity(v,0)
+            this.john.anims.play('john-walk-east', true)
+
         }
-        else if(this.controls.left?.isDown)
+        else if(this.controls.left?.isDown && this.john.isIdle)
         {
-            this.john.setVelocityX(-100)
-        } 
-        else 
-        {
-            this.john.setVelocityX(0)
-            // this.john.anims.play('john-idle-down')
+            this.john.setVelocity(-v,0)
+            this.john.anims.play('john-walk-west', true)
         }
-        if(this.controls.up?.isDown){
-            this.john.setVelocityY(-100)
+        else if(this.controls.up?.isDown && this.john.isIdle){
+            this.john.setVelocity(0,-v)
+            this.john.anims.play('john-walk-up', true)
         }
-        else if(this.controls.down?.isDown)
+        else if(this.controls.down?.isDown && this.john.isIdle)
         {
-            this.john.setVelocityY(100)
-            this.john.anims.play('john-run-down', true)
+            this.john.setVelocity(0,v)
+            this.john.anims.play('john-walk-down', true)
         }
-        else
+        else if(this.john.isIdle)
         {
-            this.john.setVelocityY(0)
-            this.john.anims.play('john-idle-down')
+            this.john.setVelocity(0,0)
+            this.john.anims.play('john-idle', true)
+        }
+        if(Phaser.Input.Keyboard.JustDown(this.controls.jump) && this.john.isIdle){
+            this.john.setVelocity(0,0)
+            this.john.isIdle = false
+            this.john.anims.play('john-tp-out',true)
+            this.time.addEvent({
+                delay:800,
+                callback:() => {
+                    console.log(this.controls.juright)
+                    if(this.controls.right.isDown)
+                    {
+                        this.john.setPosition(this.john.x+200,this.john.y)
+                    }
+                    if(this.controls.left.isDown)
+                    {
+                        this.john.setPosition(this.john.x-200,this.john.y)
+                    }
+                    if(this.controls.up.isDown)
+                    {
+                        this.john.setPosition(this.john.x,this.john.y-200)
+                    }
+                    if(this.controls.down.isDown)
+                    {
+                        this.john.setPosition(this.john.x,this.john.y+200)
+                    }
+                    this.john.anims.play('john-tp-in')
+                    this.john.once('animationcomplete',()=>{
+                        this.john.isIdle = true
+                    })
+                }
+            })  
         }
     }
 

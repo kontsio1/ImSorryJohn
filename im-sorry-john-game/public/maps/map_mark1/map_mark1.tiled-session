@@ -1,0 +1,32 @@
+{
+    "activeFile": "/Users/ktsionis/Desktop/SJ/map_projects/mark_1_working.tmx",
+    "expandedProjectPaths": [
+    ],
+    "fileStates": {
+        "": {
+            "scaleInEditor": 1
+        },
+        "/Users/ktsionis/Desktop/SJ/map_projects/mark_1_working.tmx": {
+            "scale": 0.73,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": -249.31506849315068,
+                "y": 180.13698630136986
+            }
+        },
+        "/Users/ktsionis/Desktop/SJ/map_projects/mark_1_working.tmx#GrassImage": {
+            "scaleInDock": 1
+        },
+        "/Users/ktsionis/Desktop/SJ/map_projects/mark_1_working.tmx#WallImage": {
+            "scaleInDock": 1
+        }
+    },
+    "map.lastUsedFormat": "tmx",
+    "openFiles": [
+        "/Users/ktsionis/Desktop/SJ/map_projects/mark_1_working.tmx"
+    ],
+    "project": "map_mark1.tiled-project",
+    "recentFiles": [
+        "/Users/ktsionis/Desktop/SJ/map_projects/mark_1_working.tmx"
+    ]
+}
