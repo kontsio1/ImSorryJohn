@@ -1,4 +1,6 @@
 import Phaser from 'phaser'
+import { createCharacterAnims } from '../Anims'
+import Slimeball from '../Characters/Slimeball'
 
 class Level1 extends Phaser.Scene{
     constructor(){
@@ -17,6 +19,7 @@ class Level1 extends Phaser.Scene{
 
         //  Load characters
         this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json');
+        this.load.atlas('slimeball', 'characters/slimeball/slimeball.png', 'characters/slimeball/slimeball.json')
 
         //  Load map
         this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json');
@@ -39,60 +42,30 @@ class Level1 extends Phaser.Scene{
         walls_layer.setPosition(this.centreX - walls_layer.width/2,0)
 
         walls_layer.setCollisionByProperty({collides: true})
+        
+        //create animations
+        createCharacterAnims(this.anims)
 
         //create john
         this.john = this.physics.add.sprite(this.centreX, this.centreY, 'john', 'walk_down1.png')
         this.john.setScale(0.25)
-        // this.john.setBodySize(this.john.body.width*0.5, this.john.body.height*0.5)
-
-        this.physics.add.collider(this.john, walls_layer)
-
-        this.anims.create({
-            key: 'john-walk-down',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_down', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-walk-up',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_up', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-walk-east',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_east', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-walk-west',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_west', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-
-        this.anims.create({
-            key: 'john-idle',
-            frames: this.anims.generateFrameNames('john', { start:1, end:2, prefix: 'idle', suffix:'.png'}),
-            frameRate: 3,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-tp-out',
-            frames: this.anims.generateFrameNames('john', { start:1, end:16, prefix: 'teleport', suffix:'.png'}),
-            frameRate: 20,
-            repeat: 0
-        })
-        this.anims.create({
-            key: 'john-tp-in',
-            frames: this.anims.generateFrameNames('john', { start:17, end:31, prefix: 'teleport', suffix:'.png'}),
-            frameRate: 20,
-            repeat: 0
-        })
+        this.john.setBodySize(100, 290)
 
         console.log(this.cameras.main.width,'hi')
         this.john.isIdle = true
+        
+        //add enemies
+        const slimeballs = this.physics.add.group({
+            classType: Slimeball
+        })
+        slimeballs.get(this.centreX, this.centreY).setCircle(7, 9, 12)
+        
+        //add colliders
+        this.physics.add.collider(this.john, walls_layer)
+        this.physics.add.collider(slimeballs, walls_layer)
+        this.physics.add.collider(this.john, slimeballs)
+
+        // slimeball.anims.play('sb-short-jump-right', true)
     }
 
     update(t,dt){
