@@ -7,7 +7,7 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
     {
         super(scene, x, y, texture, frame)
 
-        this.setScale(1.3)
+        this.setScale(2)
         
         this.anims.play('sb-idle')
     }
