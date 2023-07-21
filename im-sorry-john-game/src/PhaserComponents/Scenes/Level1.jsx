@@ -8,9 +8,9 @@ class Level1 extends Phaser.Scene{
     }
 
     preload(){
-        this.centreX = this.cameras.main.width/2
-        this.centreY = this.cameras.main.height/2
-        
+        this.centreX = this.game.config.height/2
+        this.centreY = this.game.config.width/2
+
         this.controls = this.input.keyboard.addKeys({'up':'W', 'left':'A', 'right':'D', 'down':'S', 'jump':'SPACE'})
 
         //  Load tile images
@@ -39,7 +39,7 @@ class Level1 extends Phaser.Scene{
         this.walls_layer = map.createLayer('Walls', wall_tiles)
         
         grass_layer.setPosition(this.centreX - grass_layer.width/2,0)
-        this.walls_layer.setPosition(this.centreX - this.walls_layer.width/2,0)
+        walls_layer.setPosition(this.centreX - walls_layer.width/2,0)
 
         this.walls_layer.setCollisionByProperty({collides: true})
         
@@ -47,11 +47,9 @@ class Level1 extends Phaser.Scene{
         createCharacterAnims(this.anims)
 
         //create john
-        this.john = this.physics.add.sprite(this.centreX, this.centreY, 'john', 'walk_down1.png')
+        this.john = this.physics.add.sprite(this.centreX+400, this.centreY, 'john', 'walk_down1.png')
         this.john.setScale(0.25)
         this.john.setBodySize(100, 290)
-
-        console.log(this.cameras.main.width,'hi')
         this.john.isIdle = true
         
         //add enemies
@@ -66,13 +64,28 @@ class Level1 extends Phaser.Scene{
         //add colliders
         this.physics.add.collider(this.john, this.walls_layer)
 
-        // slimeball.anims.play('sb-short-jump-right', true)
-    }
+        //create world
+        this.physics.world.setBounds(0,0,map.widthInPixels, map.heightInPixels)
+        const camera = this.cameras.main
+        camera.setBounds(0,0, map.widthInPixels, map.heightInPixels+200)
+        camera.startFollow(this.john, true, 0.1,0.1,0,0)
 
+        console.log(map.widthInPixels, map.heightInPixels, "<<map")
+        console.log(this.game.config.width, this.game.config.height, "<<game")
+        console.log(this.cameras.main.width, this.cameras.main.height,"<<camera")
+    }
+    
     update(t,dt){
-        // console.log(this.john.isIdle)
+        //camera
+        
+        // let scrol_x = this.john.x - this.game.config.width/2
+        // let scrol_y = this.john.y - this.game.config.height/2
+
+        // this.cameras.main.scrollX = scrol_x
+        // this.cameras.main.scrollY = scrol_y
+
+        //john controls
         const v = 150
-        // this.john.anims.play('john-idle')
 
         if(this.controls.right?.isDown && this.john.isIdle)
         {
@@ -106,7 +119,6 @@ class Level1 extends Phaser.Scene{
             this.time.addEvent({
                 delay:800,
                 callback:() => {
-                    console.log(this.controls.juright)
                     if(this.controls.right.isDown)
                     {
                         this.john.setPosition(this.john.x+200,this.john.y)

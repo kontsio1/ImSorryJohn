@@ -11,10 +11,10 @@ export const GameHolder = () => {
         const config = {
             type: Phaser.AUTO,
             title: "I'm sorry John",
-            parent: 'game container',
+            parent: 'game-container',
             width: window.innerWidth, //change this later
             height: window.innerHeight,
-            // pixelArt: true,
+            pixelArt: true,
             physics: {
                 default: 'arcade',
                 arcade: {
@@ -23,9 +23,9 @@ export const GameHolder = () => {
                 },
             },
             scene: [goMainMenu, goLevel1],
-            // scale: {
-            //     zoom: 0.5
-            // }nbytfjg
+            scale: {
+                zoom: 1
+            }
         }
         new Phaser.Game(config)
     })

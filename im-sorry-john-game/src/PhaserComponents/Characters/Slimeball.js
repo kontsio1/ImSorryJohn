@@ -8,10 +8,8 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
         super(scene, x, y, texture, frame)
 
         this.setScale(1.3)
-        console.log(this.x, this.y, scene.john.x, scene.john.y)
         scene.physics.add.collider(scene.john, this, this.handleTouchPlayer)
         scene.physics.add.collider(scene.walls_layer, this, this.handleWallCollision)
-
         this.anims.play('sb-idle')
 
     }
