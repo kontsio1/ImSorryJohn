@@ -50,20 +50,21 @@ class Level1 extends Phaser.Scene{
         this.john.isIdle = true
         
         //add enemies
-        new Slimeball(this)
-        
+        this.enemies = new Phaser.Physics.Arcade.Group(this.world, this)
 
-        const slimeballs = this.physics.add.group({
-            classType: Slimeball
-        })
-        slimeballs.get(this.john.x +300, this.john.y +300, 'slime1').setCircle(7, 9, 12)
-        slimeballs.get(this.john.x -300, this.john.y -300, 'slime2').setCircle(7, 9, 12)
+        let slimeball = new Slimeball(this, 100, 300, "slime1")
+        let slimeball2 = new Slimeball(this, 500,400, "slime2")
+        this.enemies.addMultiple([slimeball, slimeball2])
         
+        // var enemyStartPositions = this.findObjectsByType('enemyStart', this.map, 'objectLayer'); keep in mind for the future
+
         //add colliders
         this.physics.add.collider(this.john, this.walls_layer)
 
         //create world
-        // this.physics.world.setBounds(0,0,1800, 100)
+        this.physics.world.setBounds(0,0,1800, 100)
+
+        //camera
         const camera = this.cameras.main
         camera.setSize(window.innerWidth, window.innerHeight)
         camera.setBounds(0,0, map.widthInPixels*2, map.heightInPixels*2)
@@ -75,8 +76,6 @@ class Level1 extends Phaser.Scene{
     }
     
     update(t,dt){
-        //camera
-        console.log(this.john.x, this.john.y)
 
         //john controls
         const v = 150
