@@ -1,4 +1,20 @@
-# Getting Started with Create React App
+# ImSorryJohnGame
+
+## Bugs
+
+John is pushed on the edge of the map by slime balls
+
+When john is running at the edge there is no collision between him and athe slimeballs
+
+
+
+
+
+
+
+
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

@@ -1,4 +1,6 @@
 import Phaser from 'phaser'
+import { createCharacterAnims } from '../Anims'
+import Slimeball from '../Characters/Slimeball'
 
 class Level1 extends Phaser.Scene{
     constructor(){
@@ -6,9 +8,9 @@ class Level1 extends Phaser.Scene{
     }
 
     preload(){
-        this.centreX = this.cameras.main.width/2
-        this.centreY = this.cameras.main.height/2
-        
+        this.centreX = this.game.config.height/2
+        this.centreY = this.game.config.width/2
+
         this.controls = this.input.keyboard.addKeys({'up':'W', 'left':'A', 'right':'D', 'down':'S', 'jump':'SPACE'})
 
         //  Load tile images
@@ -17,6 +19,7 @@ class Level1 extends Phaser.Scene{
 
         //  Load characters
         this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json');
+        this.slimeAtlas = this.load.atlas('slimeball', 'characters/slimeball/slimeball.png', 'characters/slimeball/slimeball.json')
 
         //  Load map
         this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json');
@@ -32,74 +35,51 @@ class Level1 extends Phaser.Scene{
         const wall_tiles = map.addTilesetImage('WallImage','wall_img',32,32)
 
         //  Add tilesets as layer to map (<layer name from tiled>,<tileset variable>)
-        const grass_layer = map.createLayer('Grass', grass_tiles)
-        const walls_layer = map.createLayer('Walls', wall_tiles)
-        
-        grass_layer.setPosition(this.centreX - grass_layer.width/2,0)
-        walls_layer.setPosition(this.centreX - walls_layer.width/2,0)
+        const grass_layer = map.createLayer('Grass', grass_tiles).setScale(2)
+        this.walls_layer = map.createLayer('Walls', wall_tiles).setScale(2)
 
-        walls_layer.setCollisionByProperty({collides: true})
+        this.walls_layer.setCollisionByProperty({collides: true})
+        
+        //create animations
+        createCharacterAnims(this.anims)
 
         //create john
-        this.john = this.physics.add.sprite(this.centreX, this.centreY, 'john', 'walk_down1.png')
+        this.john = this.physics.add.sprite(500, 500, 'john', 'walk_down1.png')
         this.john.setScale(0.25)
-        // this.john.setBodySize(this.john.body.width*0.5, this.john.body.height*0.5)
-
-        this.physics.add.collider(this.john, walls_layer)
-
-        this.anims.create({
-            key: 'john-walk-down',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_down', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-walk-up',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_up', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-walk-east',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_east', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-walk-west',
-            frames: this.anims.generateFrameNames('john', { start:1, end:8, prefix: 'walk_west', suffix:'.png'}),
-            frameRate: 15,
-            repeat: -1
-        })
-
-        this.anims.create({
-            key: 'john-idle',
-            frames: this.anims.generateFrameNames('john', { start:1, end:2, prefix: 'idle', suffix:'.png'}),
-            frameRate: 3,
-            repeat: -1
-        })
-        this.anims.create({
-            key: 'john-tp-out',
-            frames: this.anims.generateFrameNames('john', { start:1, end:16, prefix: 'teleport', suffix:'.png'}),
-            frameRate: 20,
-            repeat: 0
-        })
-        this.anims.create({
-            key: 'john-tp-in',
-            frames: this.anims.generateFrameNames('john', { start:17, end:31, prefix: 'teleport', suffix:'.png'}),
-            frameRate: 20,
-            repeat: 0
-        })
-
-        console.log(this.cameras.main.width,'hi')
+        this.john.setBodySize(100, 290)
         this.john.isIdle = true
+        
+        //add enemies
+        this.enemies = new Phaser.Physics.Arcade.Group(this.world, this)
+
+        let slimeball = new Slimeball(this, 100, 300, "slime1")
+        let slimeball2 = new Slimeball(this, 500,400, "slime2")
+        this.enemies.addMultiple([slimeball, slimeball2])
+        
+        // var enemyStartPositions = this.findObjectsByType('enemyStart', this.map, 'objectLayer'); keep in mind for the future
+
+        //add colliders
+        this.physics.add.collider(this.john, this.walls_layer)
+
+        //create world
+        this.physics.world.setBounds(0,0,1800, 100)
+
+        //camera
+        const camera = this.cameras.main
+        camera.setSize(window.innerWidth, window.innerHeight)
+        camera.setBounds(0,0, map.widthInPixels*2, map.heightInPixels*2)
+        camera.startFollow(this.john, true, 1,1)
+
+        console.log(map.widthInPixels, map.heightInPixels, "<<map")
+        console.log(this.game.config.width, this.game.config.height, "<<game")
+        console.log(this.cameras.main.width, this.cameras.main.height,"<<camera")
     }
-
+    
     update(t,dt){
-        // console.log(this.john.isIdle)
-        const v = 150
-        // this.john.anims.play('john-idle')
 
+        //john controls
+        const v = 150
+        
         if(this.controls.right?.isDown && this.john.isIdle)
         {
             this.john.setVelocity(v,0)
@@ -132,7 +112,6 @@ class Level1 extends Phaser.Scene{
             this.time.addEvent({
                 delay:800,
                 callback:() => {
-                    console.log(this.controls.juright)
                     if(this.controls.right.isDown)
                     {
                         this.john.setPosition(this.john.x+200,this.john.y)
