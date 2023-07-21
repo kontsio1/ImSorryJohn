@@ -14,7 +14,6 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
 
     }
     handleWallCollision() {
-        console.log('woaah')
     }
     handleTouchPlayer() {
 
@@ -26,6 +25,5 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
         const speed = 10
         const awayFromJohn = {relativeX: this.scene.john.x-this.x, relativeY: this.scene.john.y-this.y}
         this.setVelocity(awayFromJohn.relativeX, awayFromJohn.relativeY)
-        console.log(awayFromJohn)
     }
 }

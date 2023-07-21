@@ -35,11 +35,8 @@ class Level1 extends Phaser.Scene{
         const wall_tiles = map.addTilesetImage('WallImage','wall_img',32,32)
 
         //  Add tilesets as layer to map (<layer name from tiled>,<tileset variable>)
-        const grass_layer = map.createLayer('Grass', grass_tiles)
-        this.walls_layer = map.createLayer('Walls', wall_tiles)
-        
-        grass_layer.setPosition(this.centreX - grass_layer.width/2,0)
-        walls_layer.setPosition(this.centreX - walls_layer.width/2,0)
+        const grass_layer = map.createLayer('Grass', grass_tiles).setScale(2)
+        this.walls_layer = map.createLayer('Walls', wall_tiles).setScale(2)
 
         this.walls_layer.setCollisionByProperty({collides: true})
         
@@ -47,28 +44,30 @@ class Level1 extends Phaser.Scene{
         createCharacterAnims(this.anims)
 
         //create john
-        this.john = this.physics.add.sprite(this.centreX+400, this.centreY, 'john', 'walk_down1.png')
+        this.john = this.physics.add.sprite(500, 500, 'john', 'walk_down1.png')
         this.john.setScale(0.25)
         this.john.setBodySize(100, 290)
         this.john.isIdle = true
         
         //add enemies
         new Slimeball(this)
+        
 
         const slimeballs = this.physics.add.group({
             classType: Slimeball
         })
-        slimeballs.get(this.centreX +300, this.centreY +300).setCircle(7, 9, 12)
-        slimeballs.get(this.centreX -300, this.centreY +300).setCircle(7, 9, 12)
+        slimeballs.get(this.john.x +300, this.john.y +300, 'slime1').setCircle(7, 9, 12)
+        slimeballs.get(this.john.x -300, this.john.y -300, 'slime2').setCircle(7, 9, 12)
         
         //add colliders
         this.physics.add.collider(this.john, this.walls_layer)
 
         //create world
-        this.physics.world.setBounds(0,0,map.widthInPixels, map.heightInPixels)
+        // this.physics.world.setBounds(0,0,1800, 100)
         const camera = this.cameras.main
-        camera.setBounds(0,0, map.widthInPixels, map.heightInPixels+200)
-        camera.startFollow(this.john, true, 0.1,0.1,0,0)
+        camera.setSize(window.innerWidth, window.innerHeight)
+        camera.setBounds(0,0, map.widthInPixels*2, map.heightInPixels*2)
+        camera.startFollow(this.john, true, 1,1)
 
         console.log(map.widthInPixels, map.heightInPixels, "<<map")
         console.log(this.game.config.width, this.game.config.height, "<<game")
@@ -77,16 +76,11 @@ class Level1 extends Phaser.Scene{
     
     update(t,dt){
         //camera
-        
-        // let scrol_x = this.john.x - this.game.config.width/2
-        // let scrol_y = this.john.y - this.game.config.height/2
-
-        // this.cameras.main.scrollX = scrol_x
-        // this.cameras.main.scrollY = scrol_y
+        console.log(this.john.x, this.john.y)
 
         //john controls
         const v = 150
-
+        
         if(this.controls.right?.isDown && this.john.isIdle)
         {
             this.john.setVelocity(v,0)
