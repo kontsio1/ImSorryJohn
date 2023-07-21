@@ -19,7 +19,7 @@ class Level1 extends Phaser.Scene{
 
         //  Load characters
         this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json');
-        this.load.atlas('slimeball', 'characters/slimeball/slimeball.png', 'characters/slimeball/slimeball.json')
+        this.slimeAtlas = this.load.atlas('slimeball', 'characters/slimeball/slimeball.png', 'characters/slimeball/slimeball.json')
 
         //  Load map
         this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json');
@@ -36,12 +36,12 @@ class Level1 extends Phaser.Scene{
 
         //  Add tilesets as layer to map (<layer name from tiled>,<tileset variable>)
         const grass_layer = map.createLayer('Grass', grass_tiles)
-        const walls_layer = map.createLayer('Walls', wall_tiles)
+        this.walls_layer = map.createLayer('Walls', wall_tiles)
         
         grass_layer.setPosition(this.centreX - grass_layer.width/2,0)
-        walls_layer.setPosition(this.centreX - walls_layer.width/2,0)
+        this.walls_layer.setPosition(this.centreX - this.walls_layer.width/2,0)
 
-        walls_layer.setCollisionByProperty({collides: true})
+        this.walls_layer.setCollisionByProperty({collides: true})
         
         //create animations
         createCharacterAnims(this.anims)
@@ -55,15 +55,16 @@ class Level1 extends Phaser.Scene{
         this.john.isIdle = true
         
         //add enemies
+        new Slimeball(this)
+
         const slimeballs = this.physics.add.group({
             classType: Slimeball
         })
-        slimeballs.get(this.centreX, this.centreY).setCircle(7, 9, 12)
+        slimeballs.get(this.centreX +300, this.centreY +300).setCircle(7, 9, 12)
+        slimeballs.get(this.centreX -300, this.centreY +300).setCircle(7, 9, 12)
         
         //add colliders
-        this.physics.add.collider(this.john, walls_layer)
-        this.physics.add.collider(slimeballs, walls_layer)
-        this.physics.add.collider(this.john, slimeballs)
+        this.physics.add.collider(this.john, this.walls_layer)
 
         // slimeball.anims.play('sb-short-jump-right', true)
     }

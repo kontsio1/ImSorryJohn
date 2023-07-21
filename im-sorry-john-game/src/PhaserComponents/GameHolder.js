@@ -25,7 +25,7 @@ export const GameHolder = () => {
             scene: [goMainMenu, goLevel1],
             // scale: {
             //     zoom: 0.5
-            // }
+            // }nbytfjg
         }
         new Phaser.Game(config)
     })
