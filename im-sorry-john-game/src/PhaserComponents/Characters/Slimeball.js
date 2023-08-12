@@ -1,5 +1,6 @@
 import Phaser, { Scene } from "phaser";
 import { Level1 } from "../Scenes/Level1";
+import { johnTakeDmg } from "../Functions/johnTakeDmg";
 
 export default class Slimeball extends Phaser.Physics.Arcade.Sprite
 {
@@ -14,7 +15,7 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
         this.setCircle(7, 9, 12)
 
         scene.physics.add.collider(scene.enemies)
-        scene.physics.add.collider(scene.john, this, this.handleTouchPlayer)
+        scene.physics.add.collider(scene.john, this, this.handleTouchPlayer(scene))
         scene.physics.add.collider(scene.walls_layer, this, this.handleWallCollision)
 
         console.log(scene.enemies, '<<enemies')
@@ -25,8 +26,8 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
     handleWallCollision() {
         console.log('take wall')
     }
-    handleTouchPlayer() {
-        console.log('take dmg')
+    handleTouchPlayer(scene) {
+        johnTakeDmg(scene, 1)
     }
     preUpdate(t,dt)
     {

@@ -24,6 +24,9 @@ class Level1 extends Phaser.Scene{
         //  Load map
         this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json');
 
+        //load icons
+        this.load.image('heart', 'icons/heart.png')
+
     }
     
     create(){
@@ -44,7 +47,7 @@ class Level1 extends Phaser.Scene{
         createCharacterAnims(this.anims)
 
         //create john
-        this.john = this.physics.add.sprite(500, 500, 'john', 'walk_down1.png')
+        this.john = this.physics.add.sprite(700, 500, 'john', 'walk_down1.png')
         this.john.setScale(0.25)
         this.john.setBodySize(100, 290)
         this.john.isIdle = true
@@ -69,6 +72,18 @@ class Level1 extends Phaser.Scene{
         camera.setSize(window.innerWidth, window.innerHeight)
         camera.setBounds(0,0, map.widthInPixels*2, map.heightInPixels*2)
         camera.startFollow(this.john, true, 1,1)
+
+        //container
+        let hpBar = {initialX: 30, spacing:5, heartSizeX: 50, heartSizeY: 50} // sprite origin is at centre
+        let hpArr = []
+        for (let i = 0; i < 5; i++) {
+            hpArr.push(this.add.sprite(hpBar.initialX + i *  (hpBar.heartSizeX + hpBar.spacing), window.innerHeight-50,'heart').setDisplaySize(hpBar.heartSizeX, hpBar.heartSizeY))
+        }
+        let hud = this.add.container(0, 0, hpArr)
+        hud.setScrollFactor(0)
+
+        // 50  50-100
+        // 50*2 + space
 
         console.log(map.widthInPixels, map.heightInPixels, "<<map")
         console.log(this.game.config.width, this.game.config.height, "<<game")
@@ -145,6 +160,10 @@ class Level1 extends Phaser.Scene{
             collidingTileColor: new Phaser.Display.Color(243,134,48,255),
             faceColor: new Phaser.Display.Color(40,39,37,255)
         })
+    }
+
+    johnTakeDmg(dmg) {
+        console.log(this, 'take dmg!')
     }
 
 }
