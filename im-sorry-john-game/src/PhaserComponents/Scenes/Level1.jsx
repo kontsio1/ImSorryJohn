@@ -27,6 +27,9 @@ class Level1 extends Phaser.Scene{
         //load icons
         this.load.image('heart', 'icons/heart.png')
 
+        this.load.image('fireball', 'items/fireball.png')
+        this.load.image('lightsaber', 'items/lightsaber.png')
+
     }
     
     create(){
@@ -55,9 +58,13 @@ class Level1 extends Phaser.Scene{
         //add enemies
         this.enemies = new Phaser.Physics.Arcade.Group(this.world, this)
 
-        let slimeball = new Slimeball(this, 100, 300, "slime1")
-        let slimeball2 = new Slimeball(this, 500,400, "slime2")
-        this.enemies.addMultiple([slimeball, slimeball2])
+        let slimeball = new Slimeball(this, 100, 300, "slime1").setName('slime1').setTint(0xff0000)
+        let slimeball2 = new Slimeball(this, 500,400, "slime2").setName('slime2')
+        let slimeball3 = new Slimeball(this, 600,400, "slime3").setName('slime3')
+        let slimeball4 = new Slimeball(this, 200,500, "slime4").setName('slime4')
+        let slimeball5 = new Slimeball(this, 300,200, "slime5").setName('slime5')
+        this.enemies.addMultiple([slimeball, slimeball2, slimeball3, slimeball4, slimeball5])
+    
         
         // var enemyStartPositions = this.findObjectsByType('enemyStart', this.map, 'objectLayer'); keep in mind for the future
 
@@ -82,8 +89,8 @@ class Level1 extends Phaser.Scene{
         let hud = this.add.container(0, 0, hpArr)
         hud.setScrollFactor(0)
 
-        // 50  50-100
-        // 50*2 + space
+        this.add.sprite(700,500, 'fireball').setDisplaySize(30,30)
+        this.add.sprite(800,500, 'lightsaber').setDisplaySize(60,60)
 
         console.log(map.widthInPixels, map.heightInPixels, "<<map")
         console.log(this.game.config.width, this.game.config.height, "<<game")
@@ -161,11 +168,6 @@ class Level1 extends Phaser.Scene{
             faceColor: new Phaser.Display.Color(40,39,37,255)
         })
     }
-
-    johnTakeDmg(dmg) {
-        console.log(this, 'take dmg!')
-    }
-
 }
 
 export {Level1}

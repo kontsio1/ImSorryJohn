@@ -1,3 +1,3 @@
 export function johnTakeDmg(scene, dmg) {
-    console.log(scene, 'my function')
+    console.log('my function')
 }
