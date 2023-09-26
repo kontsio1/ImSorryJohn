@@ -24,8 +24,6 @@ export const GameHolder = () => {
             },
             scene: [goMainMenu, goLevel1],
             scale: {
-                // mode: Phaser.Scale.FIT,
-                // autoCenter: Phaser.Scale.CENTER_VERTICALLY,
                 zoom: 1
             }
         }
