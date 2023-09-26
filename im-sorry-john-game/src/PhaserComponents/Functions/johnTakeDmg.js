@@ -1,3 +1,3 @@
-export function johnTakeDmg(scene, dmg) {
-    console.log('my function')
+export function johnTakeDmg(scene, dmg, dir) {
+    scene.john.setVelocity(dir.x, dir.y)
 }

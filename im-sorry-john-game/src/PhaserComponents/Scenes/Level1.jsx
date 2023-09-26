@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { createCharacterAnims } from '../Anims'
 import Slimeball from '../Characters/Slimeball'
+import John from '../Characters/John'
 
 class Level1 extends Phaser.Scene{
     constructor(){
@@ -18,7 +19,7 @@ class Level1 extends Phaser.Scene{
         this.load.image('wall_img','maps/map_mark1/GroundImage.png');
 
         //  Load characters
-        this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json');
+        this.johnAtlas = this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json');
         this.slimeAtlas = this.load.atlas('slimeball', 'characters/slimeball/slimeball.png', 'characters/slimeball/slimeball.json')
 
         //  Load map
@@ -50,15 +51,14 @@ class Level1 extends Phaser.Scene{
         createCharacterAnims(this.anims)
 
         //create john
-        this.john = this.physics.add.sprite(700, 500, 'john', 'walk_down1.png')
-        this.john.setScale(0.25)
-        this.john.setBodySize(100, 290)
-        this.john.isIdle = true
+        const player = new Phaser.Physics.Arcade.Group(this.world, this)
+        this.john = new John(this, 700, 500, 'john', 'walk_down1.png')
+        player.add(this.john)
         
         //add enemies
         this.enemies = new Phaser.Physics.Arcade.Group(this.world, this)
 
-        let slimeball = new Slimeball(this, 100, 300, "slime1").setName('slime1').setTint(0xff0000)
+        let slimeball = new Slimeball(this, 100, 300, "slime1").setName('slime1')
         let slimeball2 = new Slimeball(this, 500,400, "slime2").setName('slime2')
         let slimeball3 = new Slimeball(this, 600,400, "slime3").setName('slime3')
         let slimeball4 = new Slimeball(this, 200,500, "slime4").setName('slime4')
@@ -98,64 +98,9 @@ class Level1 extends Phaser.Scene{
     }
     
     update(t,dt){
-
-        //john controls
-        const v = 150
-        
-        if(this.controls.right?.isDown && this.john.isIdle)
+        if(this.john)
         {
-            this.john.setVelocity(v,0)
-            this.john.anims.play('john-walk-east', true)
-
-        }
-        else if(this.controls.left?.isDown && this.john.isIdle)
-        {
-            this.john.setVelocity(-v,0)
-            this.john.anims.play('john-walk-west', true)
-        }
-        else if(this.controls.up?.isDown && this.john.isIdle){
-            this.john.setVelocity(0,-v)
-            this.john.anims.play('john-walk-up', true)
-        }
-        else if(this.controls.down?.isDown && this.john.isIdle)
-        {
-            this.john.setVelocity(0,v)
-            this.john.anims.play('john-walk-down', true)
-        }
-        else if(this.john.isIdle)
-        {
-            this.john.setVelocity(0,0)
-            this.john.anims.play('john-idle', true)
-        }
-        if(Phaser.Input.Keyboard.JustDown(this.controls.jump) && this.john.isIdle){
-            this.john.setVelocity(0,0)
-            this.john.isIdle = false
-            this.john.anims.play('john-tp-out',true)
-            this.time.addEvent({
-                delay:800,
-                callback:() => {
-                    if(this.controls.right.isDown)
-                    {
-                        this.john.setPosition(this.john.x+200,this.john.y)
-                    }
-                    if(this.controls.left.isDown)
-                    {
-                        this.john.setPosition(this.john.x-200,this.john.y)
-                    }
-                    if(this.controls.up.isDown)
-                    {
-                        this.john.setPosition(this.john.x,this.john.y-200)
-                    }
-                    if(this.controls.down.isDown)
-                    {
-                        this.john.setPosition(this.john.x,this.john.y+200)
-                    }
-                    this.john.anims.play('john-tp-in')
-                    this.john.once('animationcomplete',()=>{
-                        this.john.isIdle = true
-                    })
-                }
-            })  
+            this.john.update(this.controls)
         }
     }
 

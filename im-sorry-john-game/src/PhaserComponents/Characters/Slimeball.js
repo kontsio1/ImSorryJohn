@@ -38,7 +38,9 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite
         console.log('take wall')
     }
     handleTouchPlayer(scene) {
-        johnTakeDmg(scene, 1)
+        const dir = this.body.velocity
+        // console.log(dir, 'dir')
+        johnTakeDmg(scene, 1, dir)
     }
     
     preUpdate(t,dt)
