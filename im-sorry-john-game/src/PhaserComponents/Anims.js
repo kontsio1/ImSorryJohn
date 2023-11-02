@@ -59,6 +59,31 @@ const createCharacterAnims = (anims) => {
         frameRate: 15,
         repeat: -1
     })
+    //heart
+    anims.create({
+        key: 'heart-full-idle',
+        frames: anims.generateFrameNames('heart_full', {start:1, end:2, prefix:'myHeart',suffix:'.png'}),
+        frameRate: 3,
+        repeat: -1
+    })
+    anims.create({
+        key: 'heart-half-idle',
+        frames: anims.generateFrameNames('heart_half', {start:1, end:2, prefix:'myHeart',suffix:'.png'}),
+        frameRate: 3,
+        repeat: -1
+    })
+    anims.create({
+        key: 'heart-empty-idle',
+        frames: anims.generateFrameNames('heart_empty', {start:1, end:2, prefix:'myHeart',suffix:'.png'}),
+        frameRate: 3,
+        repeat: -1
+    })
+    anims.create({
+        key: 'fireball-travelling',
+        frames: anims.generateFrameNames('fireball', {start:1, end:3, prefix:'fireball',suffix:'.png'}),
+        frameRate: 8,
+        repeat: -1
+    })
 }
 
 export {createCharacterAnims}

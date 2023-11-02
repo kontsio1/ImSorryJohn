@@ -19,7 +19,7 @@ export const GameHolder = () => {
                 default: 'arcade',
                 arcade: {
                     gravity: {y:0},
-                    debug: true,
+                    debug: false,
                 },
             },
             scene: [goMainMenu, goLevel1],
