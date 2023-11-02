@@ -12,7 +12,7 @@ class Level1 extends Phaser.Scene{
         this.centreX = this.game.config.height/2
         this.centreY = this.game.config.width/2
 
-        this.controls = this.input.keyboard.addKeys({'up':'W', 'left':'A', 'right':'D', 'down':'S', 'jump':'SPACE'})
+        this.controls = this.input.keyboard.addKeys({'up':'W', 'left':'A', 'right':'D', 'down':'S', 'jump':'SPACE', 'item1':'SHIFT', "throwUp":"UP", "throwDown":"DOWN", "throwLeft": "LEFT", "throwRight": "RIGHT",  })
 
         //  Load tile images
         this.load.image('grass_img', 'maps/map_mark1/GrassImage.png');
@@ -26,9 +26,13 @@ class Level1 extends Phaser.Scene{
         this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json');
 
         //load icons
-        this.load.image('heart', 'icons/heart.png')
+        this.load.atlas('heart_full', 'icons/hearts/heart.png', 'icons/hearts/heart.json')
+        this.load.atlas('heart_half', 'icons/hearts/heart_half.png', 'icons/hearts/heart_half.json')
+        this.load.atlas('heart_empty', 'icons/hearts/heart_empty.png', 'icons/hearts/heart_empty.json')
+        
+        this.load.atlas('fireball', 'items/fireball.png', 'items/fireball.json')
 
-        this.load.image('fireball', 'items/fireball.png')
+        // this.load.image('fireball', 'items/fireball.png')
         this.load.image('lightsaber', 'items/lightsaber.png')
 
     }
@@ -60,16 +64,8 @@ class Level1 extends Phaser.Scene{
 
         let slimeball = new Slimeball(this, 100, 300, "slime1").setName('slime1')
         let slimeball2 = new Slimeball(this, 500,400, "slime2").setName('slime2')
-        let slimeball3 = new Slimeball(this, 600,400, "slime3").setName('slime3')
-        let slimeball4 = new Slimeball(this, 200,500, "slime4").setName('slime4')
-        let slimeball5 = new Slimeball(this, 300,200, "slime5").setName('slime5')
-        this.enemies.addMultiple([slimeball, slimeball2, slimeball3, slimeball4, slimeball5])
-    
-        
+        this.enemies.addMultiple([slimeball, slimeball2])
         // var enemyStartPositions = this.findObjectsByType('enemyStart', this.map, 'objectLayer'); keep in mind for the future
-
-        //add colliders
-        this.physics.add.collider(this.john, this.walls_layer)
 
         //create world
         this.physics.world.setBounds(0,0,1800, 100)
@@ -81,30 +77,54 @@ class Level1 extends Phaser.Scene{
         camera.startFollow(this.john, true, 1,1)
 
         //container
-        let hpBar = {initialX: 30, spacing:5, heartSizeX: 50, heartSizeY: 50} // sprite origin is at centre
-        let hpArr = []
-        for (let i = 0; i < 5; i++) {
-            hpArr.push(this.add.sprite(hpBar.initialX + i *  (hpBar.heartSizeX + hpBar.spacing), window.innerHeight-50,'heart').setDisplaySize(hpBar.heartSizeX, hpBar.heartSizeY))
+        let hpBar = {initialX: 50, spacing:65, heartSizeX: 90, heartSizeY: 90} // sprite origin is at centre
+        this.hpArr = []
+        for (let i = 0; i < this.john.maxHp; i++) {
+            const heart = this.add.sprite(hpBar.initialX+hpBar.spacing*i,window.innerHeight-50,'heart_half').setDisplaySize(hpBar.heartSizeX, hpBar.heartSizeY)
+            this.hpArr.push(heart)
+            heart.anims.play('heart-full-idle', true)
         }
-        let hud = this.add.container(0, 0, hpArr)
-        hud.setScrollFactor(0)
-
-        this.add.sprite(700,500, 'fireball').setDisplaySize(30,30)
+        this.hud = this.add.container(0, 0, this.hpArr)
+        this.hud.setScrollFactor(0)
+        
         this.add.sprite(800,500, 'lightsaber').setDisplaySize(60,60)
+
+        //weapons
+        this.fireballs = this.physics.add.group({maxSize: 10})
+        this.john.setFireballs(this.fireballs)
+
+        //add colliders
+        this.physics.add.collider(this.john, this.walls_layer)
+        this.physics.add.collider(this.fireballs, this.walls_layer, this.hitWall)
+        this.physics.add.collider(this.fireballs, this.enemies, this.hitEnemy, undefined, this)
 
         console.log(map.widthInPixels, map.heightInPixels, "<<map")
         console.log(this.game.config.width, this.game.config.height, "<<game")
         console.log(this.cameras.main.width, this.cameras.main.height,"<<camera")
     }
     
-    update(t,dt){
-        if(this.john)
-        {
-            this.john.update(this.controls)
-        }
+    update(t,dt)
+    {
+        this.john.update(this.controls)
+        this.john.checkIfDead()
+    }
+    hitWall(fireball)
+    {
+        fireball.destroy()
     }
 
-    showMapBarriers() {
+    hitEnemy(fireball, enemy)
+    {  
+        const dx = enemy.x - fireball.x;
+        const dy = enemy.y - fireball.y;
+        const dir = new Phaser.Math.Vector2(dx, dy).normalize().scale(200);
+
+        fireball.destroy()
+        enemy.takeDmg(enemy, 5, this, dir) /*change later fireball dmg*/
+    }
+
+    showMapBarriers() 
+    {
         // shows collision terrain  
         const debugGraphics = this.add.graphics().setAlpha(0.7)
         this.rocksLayer.renderDebug(debugGraphics, {
