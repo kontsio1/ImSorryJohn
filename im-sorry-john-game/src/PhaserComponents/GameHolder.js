@@ -1,22 +1,17 @@
-import Phaser from 'phaser';
+import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
-import { MainMenu } from './Scenes/MainMenu';
-import { Level1 } from './Scenes/Level1';
-import { WaveCompleteScene } from './Scenes/WaveCompleteScene';
-import { StatisticsScene } from './Scenes/StatisticsScene';
+import { MainMenu } from './Scenes/MainMenu'
+import { Level1 } from './Scenes/Level1Stable'
+import { WaveCompleteScene } from './Scenes/WaveCompleteScene'
+import { StatisticsScene } from './Scenes/StatisticsScene'
 
 export const GameHolder = () => {
     const gameRef = useRef(null)
 
-    useEffect(()=>{
+    useEffect(() => {
         if (gameRef.current) {
             return undefined
         }
-
-        const goMainMenu = new MainMenu()
-        const goLevel1 = new Level1()
-        const waveComplete = new WaveCompleteScene()
-        const statistics = new StatisticsScene()
 
         const config = {
             type: Phaser.AUTO,
@@ -28,29 +23,24 @@ export const GameHolder = () => {
             physics: {
                 default: 'arcade',
                 arcade: {
-                    gravity: {y:0},
+                    gravity: { y: 0 },
                     debug: false,
                     useTree: false,
                 },
             },
-            scene: [goMainMenu, goLevel1, waveComplete, statistics],
+            scene: [new MainMenu(), new Level1(), new WaveCompleteScene(), new StatisticsScene()],
             scale: {
-                zoom: 1
-            }
+                zoom: 1,
+            },
         }
 
         gameRef.current = new Phaser.Game(config)
 
-        return ()=>{
+        return () => {
             gameRef.current?.destroy(true)
             gameRef.current = null
         }
-    },[])
-    //UseEffect-end
+    }, [])
 
-    return(
-        <div id='game-container'>
-            {/* Phaser renders here */}
-        </div>
-    )
+    return <div id='game-container' />
 }

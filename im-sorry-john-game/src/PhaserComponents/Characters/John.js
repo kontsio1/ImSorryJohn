@@ -10,7 +10,15 @@ const MAX_FIREBALL_SCALE = 5.2;
 
 const CHARGE_BAR_WIDTH = 52;
 const CHARGE_BAR_HEIGHT = 6;
-const CHARGE_BAR_FOOT_GAP = 5;
+const CHARGE_BAR_FOOT_GAP = 10;
+
+const TELEPORT_TRAVEL_MS = 800;
+const TELEPORT_INVULNERABLE_MS = 1000;
+const TELEPORT_LANDING_DAMAGE = 15;
+const TELEPORT_LANDING_RADIUS_X = 120;
+const TELEPORT_LANDING_RADIUS_Y = 85;
+const TELEPORT_LANDING_KNOCKBACK = 260;
+const TELEPORT_DISTANCE = 200;
 
 export default class John extends Phaser.Physics.Arcade.Sprite {
   speed = 250;
@@ -28,12 +36,21 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
 
     this.isIdle = true;
     this.isDead = false;
+    this.isTeleporting = false;
+    this.isInvulnerable = false;
 
     this.chargeDirection = null;
     this.chargeTimeMs = 0;
+    this.invulnerabilityEvent = null;
 
     this.createChargeIndicator();
-    this.once("destroy", () => this.destroyChargeIndicator());
+    this.once("destroy", () => this.handleDestroy());
+  }
+
+  handleDestroy() {
+    this.destroyChargeIndicator();
+    this.invulnerabilityEvent?.remove(false);
+    this.invulnerabilityEvent = null;
   }
 
   setFireballs(fireballs) {
@@ -76,13 +93,14 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
       this.chargeBarBg.setVisible(false);
       this.chargeBarFill.setVisible(false);
       this.chargeBarFill.width = 0;
+      this.lastChargeBarX = Number.NaN;
+      this.lastChargeBarY = Number.NaN;
       this.lastChargeFillWidth = 0;
       return;
     }
 
     const ratio = Phaser.Math.Clamp(this.chargeTimeMs / MAX_CHARGE_MS, 0, 1);
     const camera = this.scene.cameras.main;
-
     const feetWorldY = this.y + this.displayHeight * 0.5;
     const projectedCenterX = (this.x - camera.worldView.x) * camera.zoom + camera.x;
     const projectedCenterY =
@@ -96,7 +114,6 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
     this.chargeBarBg.setVisible(true);
     this.chargeBarFill.setVisible(true);
 
-    // Pixel-snapping + change-only writes reduce jitter from camera smoothing.
     if (snappedCenterX !== this.lastChargeBarX || snappedCenterY !== this.lastChargeBarY) {
       this.chargeBarBg.setPosition(snappedCenterX, snappedCenterY);
       this.chargeBarFill.setPosition(leftX, snappedCenterY);
@@ -228,12 +245,63 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
     this.releaseChargedFireball(this.chargeDirection);
   }
 
+  startInvulnerability(durationMs) {
+    this.isInvulnerable = true;
+    this.invulnerabilityEvent?.remove(false);
+    this.invulnerabilityEvent = this.scene.time.delayedCall(durationMs, () => {
+      this.isInvulnerable = false;
+      this.invulnerabilityEvent = null;
+    });
+  }
+
+  beginTeleport(controls) {
+    this.setVelocity(0, 0);
+    this.isIdle = false;
+    this.isTeleporting = true;
+    this.chargeDirection = null;
+    this.chargeTimeMs = 0;
+    this.startInvulnerability(TELEPORT_INVULNERABLE_MS);
+    this.anims.play("john-tp-out", true);
+
+    this.scene.time.delayedCall(TELEPORT_TRAVEL_MS, () => {
+      if (this.isDead) {
+        return;
+      }
+
+      if (controls.right.isDown) this.setPosition(this.x + TELEPORT_DISTANCE, this.y);
+      if (controls.left.isDown) this.setPosition(this.x - TELEPORT_DISTANCE, this.y);
+      if (controls.up.isDown) this.setPosition(this.x, this.y - TELEPORT_DISTANCE);
+      if (controls.down.isDown) this.setPosition(this.x, this.y + TELEPORT_DISTANCE);
+
+      this.scene.damageEnemiesInLandingEllipse(
+        this.x,
+        this.y,
+        TELEPORT_LANDING_RADIUS_X,
+        TELEPORT_LANDING_RADIUS_Y,
+        TELEPORT_LANDING_DAMAGE,
+        TELEPORT_LANDING_KNOCKBACK
+      );
+
+      this.anims.play("john-tp-in", true);
+      this.once("animationcomplete", (animation) => {
+        if (animation.key === "john-tp-in") {
+          this.isIdle = true;
+          this.isTeleporting = false;
+        }
+      });
+    });
+  }
+
   checkIfDead() {
     if (this.activeHp <= 0 && !this.isDead) {
       this.isDead = true;
       this.isIdle = true;
+      this.isTeleporting = false;
+      this.isInvulnerable = false;
       this.chargeDirection = null;
       this.chargeTimeMs = 0;
+      this.invulnerabilityEvent?.remove(false);
+      this.invulnerabilityEvent = null;
 
       if (this.scene?.showGameOver) {
         this.scene.time.delayedCall(500, () => {
@@ -247,6 +315,12 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
     if (this.isDead) {
       this.setVelocity(0, 0);
       this.setTint("0x0000");
+      this.updateChargeIndicator();
+      return;
+    }
+
+    if (this.isTeleporting) {
+      this.setVelocity(0, 0);
       this.updateChargeIndicator();
       return;
     }
@@ -274,24 +348,9 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
       this.playIfChanged(nextAnimation);
 
       if (Phaser.Input.Keyboard.JustDown(controls.jump)) {
-        this.setVelocity(0, 0);
-        this.isIdle = false;
-        this.anims.play("john-tp-out", true);
-
-        this.scene.time.addEvent({
-          delay: 800,
-          callback: () => {
-            if (controls.right.isDown) this.setPosition(this.x + 200, this.y);
-            if (controls.left.isDown) this.setPosition(this.x - 200, this.y);
-            if (controls.up.isDown) this.setPosition(this.x, this.y - 200);
-            if (controls.down.isDown) this.setPosition(this.x, this.y + 200);
-
-            this.anims.play("john-tp-in");
-            this.once("animationcomplete", () => {
-              this.isIdle = true;
-            });
-          },
-        });
+        this.beginTeleport(controls);
+        this.updateChargeIndicator();
+        return;
       }
 
       this.updateChargeAndFire(controls, dt);
