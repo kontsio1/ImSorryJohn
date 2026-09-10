@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { johnTakeDmg } from "../Functions/johnTakeDmg";
 
 export default class John extends Phaser.Physics.Arcade.Sprite {
   speed = 250;
@@ -7,7 +6,7 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
   activeHp = this.maxHp;
 
   constructor(scene, x, y, key, frame) {
-    super(scene, x, y);
+    super(scene, x, y, key, frame);
     scene.physics.add.existing(this);
     scene.add.existing(this);
     this.anims.play("john-idle", true);
@@ -21,46 +20,54 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
     this.fireballs = fireballs;
   }
 
+  playIfChanged(key) {
+    if (this.anims.currentAnim?.key !== key) {
+      this.anims.play(key, true);
+    }
+  }
+
   throwFireball(dir) {
     const fireball = this.fireballs.get(this.x, this.y, "fireball");
-    if (!fireball) {
-      console.log("out of fireballs");
-      return;
-    } else {
-      fireball.body.setCircle(10,0,6);
-      fireball.setActive(true);
-      fireball.setVisible(true);
 
-    switch(dir){
-        case "up":
-            fireball.setVelocity(0, -450);
-            fireball.anims.play("fireball-travelling", true)
-            fireball.rotation = 1.5708
-            fireball.body.offset.y = 0 /*leave zero bug(?)*/
-            fireball.body.offset.x = 6.5
-            break;
-        case "down":
-            fireball.setVelocity(0, 450);
-            fireball.anims.play("fireball-travelling", true)
-            fireball.rotation = -1.5708
-            fireball.body.offset.y = 12
-            fireball.body.offset.x = 6.5
-            break;
-        case "left":
-            fireball.setVelocity(-450, 0);
-            fireball.anims.play("fireball-travelling", true)
-            break;
-        case "right":
-            fireball.setVelocity(450, 0);
-            fireball.anims.play("fireball-travelling", true)
-            fireball.scaleX = -1
-            fireball.body.offset.x = 20
-            break;
-        default:
-            // fireball.setVelocity(0, -450);
-            fireball.anims.play("fireball-travelling", true)
+    if (!fireball) {
+      return;
     }
-}
+
+    fireball.enableBody(true, this.x, this.y, true, true);
+    fireball.body.reset(this.x, this.y);
+    fireball.body.setCircle(10, 0, 6);
+    fireball.setActive(true);
+    fireball.setVisible(true);
+    fireball.setRotation(0);
+    fireball.setFlipX(false);
+    fireball.body.offset.x = 0;
+    fireball.body.offset.y = 6;
+    fireball.anims.play("fireball-travelling", true);
+
+    switch (dir) {
+      case "up":
+        fireball.setVelocity(0, -450);
+        fireball.rotation = 1.5708;
+        fireball.body.offset.y = 0; /*leave zero bug(?)*/
+        fireball.body.offset.x = 6.5;
+        break;
+      case "down":
+        fireball.setVelocity(0, 450);
+        fireball.rotation = -1.5708;
+        fireball.body.offset.y = 12;
+        fireball.body.offset.x = 6.5;
+        break;
+      case "left":
+        fireball.setVelocity(-450, 0);
+        break;
+      case "right":
+        fireball.setVelocity(450, 0);
+        fireball.setFlipX(true);
+        fireball.body.offset.x = 20;
+        break;
+      default:
+        fireball.setVelocity(0, 0);
+    }
   }
 
   checkIfDead() {
@@ -74,25 +81,32 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
     if (this.isDead) {
       this.setVelocity(0, 0);
       this.setTint("0x0000");
+      return;
       //play death animation
     }
-    if (this.isIdle && !this.isDead) {
+
+    if (this.isIdle) {
+      let velocityX = 0;
+      let velocityY = 0;
+      let nextAnimation = "john-idle";
+
       if (controls.right?.isDown) {
-        this.setVelocity(this.speed, 0);
-        this.anims.play("john-walk-east", true);
+        velocityX = this.speed;
+        nextAnimation = "john-walk-east";
       } else if (controls.left?.isDown) {
-        this.setVelocity(-this.speed, 0);
-        this.anims.play("john-walk-west", true);
+        velocityX = -this.speed;
+        nextAnimation = "john-walk-west";
       } else if (controls.up?.isDown) {
-        this.setVelocity(0, -this.speed);
-        this.anims.play("john-walk-up", true);
+        velocityY = -this.speed;
+        nextAnimation = "john-walk-up";
       } else if (controls.down?.isDown) {
-        this.setVelocity(0, this.speed);
-        this.anims.play("john-walk-down", true);
-      } else if (this.isIdle) {
-        this.setVelocity(0, 0);
-        this.anims.play("john-idle", true);
+        velocityY = this.speed;
+        nextAnimation = "john-walk-down";
       }
+
+      this.setVelocity(velocityX, velocityY);
+      this.playIfChanged(nextAnimation);
+
       if (Phaser.Input.Keyboard.JustDown(controls.jump)) {
         this.setVelocity(0, 0);
         this.isIdle = false;
@@ -119,6 +133,7 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
           },
         });
       }
+
       if (Phaser.Input.Keyboard.JustDown(controls.throwUp)) {
         this.throwFireball("up");
       }

@@ -1,8 +1,7 @@
-import Phaser from "phaser";
-
 export function johnTakeDmg(scene, dmg, dir) {
     const heartsArr = scene.hud.list
-    if(!scene.john.isDead)
+
+    if(!scene.john.isDead && scene.john.activeHp > 0)
     {
         scene.john.isIdle = false
         scene.john.setVelocity(dir.x, dir.y)
@@ -14,8 +13,14 @@ export function johnTakeDmg(scene, dmg, dir) {
                 scene.john.clearTint()
             }
         })
-        scene.john.activeHp -= 1
-        heartsArr[scene.john.activeHp].setTexture('heart_empty')
-        heartsArr[scene.john.activeHp].anims.stop()
+
+        const previousHp = scene.john.activeHp
+        const nextHp = Math.max(previousHp - dmg, 0)
+        scene.john.activeHp = nextHp
+
+        for (let hp = previousHp - 1; hp >= nextHp; hp--) {
+            heartsArr[hp].setTexture('heart_empty')
+            heartsArr[hp].anims.stop()
+        }
     }
 }

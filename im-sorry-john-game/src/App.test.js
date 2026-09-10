@@ -1,8 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock('./PhaserComponents/GameHolder', () => ({
+  GameHolder: () => <div data-testid="game-holder" />,
+}));
+
+test('renders the game holder', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByTestId('game-holder')).toBeInTheDocument();
 });
