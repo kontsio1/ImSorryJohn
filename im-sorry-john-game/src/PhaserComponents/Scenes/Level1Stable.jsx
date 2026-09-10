@@ -70,7 +70,7 @@ class Level1 extends Phaser.Scene {
         ]
 
         this.waveManager = new WaveManager(this)
-        this.waveManager.nextWave()
+        this.waveManager.startFirstWave()
         this.waveInProgress = true
         this.spawnWave()
 
@@ -86,6 +86,7 @@ class Level1 extends Phaser.Scene {
             const heart = this.add
                 .sprite(this.hpBar.initialX + this.hpBar.spacing * i, this.scale.height - 50, 'heart_half')
                 .setDisplaySize(this.hpBar.heartSizeX, this.hpBar.heartSizeY)
+                .setScrollFactor(0)
             this.hpArr.push(heart)
             heart.anims.play('heart-full-idle', true)
         }
@@ -138,17 +139,15 @@ class Level1 extends Phaser.Scene {
     }
 
     spawnWave() {
-        const enemyCount = this.waveManager.enemiesInWave
-        const healthMod = this.waveManager.getEnemyHealthModifier(this.waveManager.currentWave)
-        const speedMod = this.waveManager.getEnemySpeedModifier(this.waveManager.currentWave)
+        const spawnPlan = this.waveManager.getSpawnPlanForWave(this.waveManager.currentWave)
 
-        for (let i = 0; i < enemyCount; i++) {
-            const spawnPos = this.spawnPositions[i % this.spawnPositions.length]
-            const enemy = new Slimeball(this, spawnPos[0], spawnPos[1], 'slimeball')
-                .setName(`slime_wave${this.waveManager.currentWave}_${i}`)
+        for (let i = 0; i < spawnPlan.length; i++) {
+            const variant = spawnPlan[i]
+            const spawnPos = this.spawnPositions[(i + this.waveManager.currentWave) % this.spawnPositions.length]
+            const variantStats = this.waveManager.getVariantStats(variant, this.waveManager.currentWave)
+            const enemy = new Slimeball(this, spawnPos[0], spawnPos[1], 'slimeball', variantStats)
+                .setName(`${variant}_wave${this.waveManager.currentWave}_${i}`)
 
-            enemy.health = Math.ceil(10 * healthMod)
-            Slimeball.speed = Math.ceil(100 * speedMod)
             this.enemies.add(enemy)
         }
     }
@@ -222,7 +221,7 @@ class Level1 extends Phaser.Scene {
             enemy.takeDmg(enemy, damage, this, dir)
 
             if (hadHealth && enemy.health <= 0) {
-                this.waveManager.incrementEnemyDefeated()
+                this.waveManager.incrementEnemyDefeated(enemy.scoreValue)
             }
         }
     }
@@ -279,7 +278,7 @@ class Level1 extends Phaser.Scene {
         enemy.takeDmg(enemy, damage, this, dir)
 
         if (hadHealth && enemy.health <= 0) {
-            this.waveManager.incrementEnemyDefeated()
+            this.waveManager.incrementEnemyDefeated(enemy.scoreValue)
         }
     }
 
@@ -294,7 +293,8 @@ class Level1 extends Phaser.Scene {
                 .setScrollFactor(0)
         }
 
-        this.waveText.setText(`Wave: ${this.waveManager.currentWave} | Enemies: ${this.waveManager.enemiesDefeated}/${this.waveManager.enemiesInWave}`)
+        const difficultyLabel = WaveManager.getDifficultyLabel(this.waveManager.difficulty)
+        this.waveText.setText(`Wave: ${this.waveManager.currentWave} (${difficultyLabel}) | Enemies: ${this.waveManager.enemiesDefeated}/${this.waveManager.enemiesInWave}`)
 
         if (!this.scoreText) {
             this.scoreText = this.add

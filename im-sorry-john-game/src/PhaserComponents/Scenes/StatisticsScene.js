@@ -26,6 +26,7 @@ export class StatisticsScene extends Phaser.Scene {
     // Stats display
     let currentY = startY + 80
     const statLines = [
+      { label: 'Difficulty:', value: this.stats.difficulty || 'normal' },
       { label: 'Final Wave:', value: this.stats.finalWave },
       { label: 'Total Score:', value: this.stats.totalScore },
       { label: 'High Score:', value: this.stats.highScore, color: '#ffff00' },

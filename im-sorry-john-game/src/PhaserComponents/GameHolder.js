@@ -25,11 +25,12 @@ export const GameHolder = () => {
                 arcade: {
                     gravity: { y: 0 },
                     debug: false,
-                    useTree: false,
                 },
             },
             scene: [new MainMenu(), new Level1(), new WaveCompleteScene(), new StatisticsScene()],
             scale: {
+                mode: Phaser.Scale.RESIZE,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
                 zoom: 1,
             },
         }

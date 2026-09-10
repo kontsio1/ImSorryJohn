@@ -1,20 +1,50 @@
 import Phaser from "phaser";
 import { johnTakeDmg } from "../Functions/johnTakeDmg";
 
+function scaleTint(rgb, factor) {
+  const r = Math.min(255, Math.max(0, Math.round(((rgb >> 16) & 0xff) * factor)));
+  const g = Math.min(255, Math.max(0, Math.round(((rgb >> 8) & 0xff) * factor)));
+  const b = Math.min(255, Math.max(0, Math.round((rgb & 0xff) * factor)));
+  return (r << 16) | (g << 8) | b;
+}
+
 export default class Slimeball extends Phaser.Physics.Arcade.Sprite {
   health = 10;
   damage = 1;
-  static speed = 100;
+  speed = 100;
+  scoreValue = 100;
+  variantType = "regular";
 
-  constructor(scene, x, y, key) {
+  constructor(scene, x, y, key, stats = {}) {
     super(scene, x, y, key);
 
     scene.add.existing(this); // adds to display list
     scene.physics.add.existing(this); // adds in physics
-    this.setScale(1.3);
+    this.variantType = stats.type ?? "regular";
+    this.variantTint = stats.tint ?? null;
+    this.health = stats.health ?? this.health;
+    this.damage = stats.damage ?? this.damage;
+    this.speed = stats.speed ?? this.speed;
+    this.scoreValue = stats.score ?? this.scoreValue;
+
+    this.setScale(stats.scale ?? 1.3);
+    this.applyVariantAccent();
+
     this.setCircle(7, 9, 12);
     this.chasing = true;
     this.anims.play("sb-idle");
+  }
+
+  applyVariantAccent() {
+    if (!this.variantTint) {
+      this.clearTint();
+      return;
+    }
+
+    // Subtle 2-tone accent: brighter on top, slightly darker on bottom.
+    const bright = scaleTint(this.variantTint, 1.08);
+    const dark = scaleTint(this.variantTint, 0.84);
+    this.setTint(bright, bright, dark, dark);
   }
 
   updateMovement(john) {
@@ -27,8 +57,8 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite {
     const distance = Math.hypot(dx, dy) || 1;
 
     this.setVelocity(
-      (dx / distance) * Slimeball.speed,
-      (dy / distance) * Slimeball.speed
+      (dx / distance) * this.speed,
+      (dy / distance) * this.speed
     );
   }
 
@@ -42,7 +72,7 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite {
       delay: 100,
       callback: () => {
         if (slime.active) {
-          slime.clearTint();
+          slime.applyVariantAccent();
           slime.chasing = true;
         }
       },
