@@ -41,13 +41,17 @@ export default class Slimeball extends Phaser.Physics.Arcade.Sprite {
     scene.time.addEvent({
       delay: 100,
       callback: () => {
-        slime.clearTint();
-        slime.chasing = true;
+        if (slime.active) {
+          slime.clearTint();
+          slime.chasing = true;
+        }
       },
     });
 
     if (slime.health <= 0) {
       slime.disableBody(true, true);
+      // Don't remove from group - just disable it to avoid collision errors
+      // The wave completion check will count disabled enemies as "killed"
     }
   }
 

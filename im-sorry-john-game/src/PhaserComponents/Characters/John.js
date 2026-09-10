@@ -48,7 +48,7 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
       case "up":
         fireball.setVelocity(0, -450);
         fireball.rotation = 1.5708;
-        fireball.body.offset.y = 0; /*leave zero bug(?)*/
+        fireball.body.offset.y = 0;
         fireball.body.offset.x = 6.5;
         break;
       case "down":
@@ -71,9 +71,19 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
   }
 
   checkIfDead() {
-    if (this.activeHp <= 0) {
+    if (this.activeHp <= 0 && !this.isDead) {
       this.isDead = true;
       this.isIdle = true;
+      // Trigger game over screen
+      if (this.scene.level1 && this.scene.level1.showGameOver) {
+        this.scene.time.delayedCall(500, () => {
+          this.scene.level1.showGameOver();
+        });
+      } else if (this.scene && this.scene.showGameOver) {
+        this.scene.time.delayedCall(500, () => {
+          this.scene.showGameOver();
+        });
+      }
     }
   }
 
@@ -82,7 +92,6 @@ export default class John extends Phaser.Physics.Arcade.Sprite {
       this.setVelocity(0, 0);
       this.setTint("0x0000");
       return;
-      //play death animation
     }
 
     if (this.isIdle) {

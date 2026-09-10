@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { useEffect, useRef } from 'react'
 import { MainMenu } from './Scenes/MainMenu';
 import { Level1 } from './Scenes/Level1';
+import { WaveCompleteScene } from './Scenes/WaveCompleteScene';
+import { StatisticsScene } from './Scenes/StatisticsScene';
 
 export const GameHolder = () => {
     const gameRef = useRef(null)
@@ -13,6 +15,8 @@ export const GameHolder = () => {
 
         const goMainMenu = new MainMenu()
         const goLevel1 = new Level1()
+        const waveComplete = new WaveCompleteScene()
+        const statistics = new StatisticsScene()
 
         const config = {
             type: Phaser.AUTO,
@@ -29,7 +33,7 @@ export const GameHolder = () => {
                     useTree: false,
                 },
             },
-            scene: [goMainMenu, goLevel1],
+            scene: [goMainMenu, goLevel1, waveComplete, statistics],
             scale: {
                 zoom: 1
             }

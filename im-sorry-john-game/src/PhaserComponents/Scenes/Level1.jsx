@@ -2,33 +2,35 @@ import Phaser from 'phaser'
 import { createCharacterAnims } from '../Anims'
 import Slimeball from '../Characters/Slimeball'
 import John from '../Characters/John'
+import { WaveManager } from '../WaveManager'
 
 const ENEMY_SPACING_THRESHOLD_SQ = 100 * 100
+const WAVE_CLEAR_HOLD_MS = 3000
 
-class Level1 extends Phaser.Scene{
+class Level1 extends Phaser.Scene {
     constructor(){
         super('Level1')
         this.enemyOrderBuffer = []
-        this.hpBar = {initialX: 50, spacing:65, heartSizeX: 90, heartSizeY: 90}
+        this.hpBar = {initialX: 50, spacing: 65, heartSizeX: 90, heartSizeY: 90}
+        this.waveManager = null
+        this.spawnPositions = []
+        this.waveInProgress = false
+        this.waveTransitioning = false
+        this.waveClearDelayEvent = null
     }
 
     preload(){
-        //  Load tile images
-        this.load.image('grass_img', 'maps/map_mark1/GrassImage.png');
-        this.load.image('wall_img','maps/map_mark1/GroundImage.png');
+        this.load.image('grass_img', 'maps/map_mark1/GrassImage.png')
+        this.load.image('wall_img', 'maps/map_mark1/GroundImage.png')
 
-        //  Load characters
-        this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json');
+        this.load.atlas('john', 'characters/john/john.png', 'characters/john/john.json')
         this.load.atlas('slimeball', 'characters/slimeball/slimeball.png', 'characters/slimeball/slimeball.json')
 
-        //  Load map
-        this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json');
+        this.load.tilemapTiledJSON('map1', 'maps/map_mark1/map_mark4.json')
 
-        //load icons
         this.load.atlas('heart_full', 'icons/hearts/heart.png', 'icons/hearts/heart.json')
         this.load.atlas('heart_half', 'icons/hearts/heart_half.png', 'icons/hearts/heart_half.json')
         this.load.atlas('heart_empty', 'icons/hearts/heart_empty.png', 'icons/hearts/heart_empty.json')
-        
         this.load.atlas('fireball', 'items/fireball.png', 'items/fireball.json')
         this.load.image('lightsaber', 'items/lightsaber.png')
     }
@@ -36,59 +38,57 @@ class Level1 extends Phaser.Scene{
     create(){
         this.controls = this.input.keyboard.addKeys({'up':'W', 'left':'A', 'right':'D', 'down':'S', 'jump':'SPACE', 'item1':'SHIFT', 'throwUp':'UP', 'throwDown':'DOWN', 'throwLeft': 'LEFT', 'throwRight': 'RIGHT'})
 
-        //  Create map
         const map = this.make.tilemap({key: 'map1'})
+        const grassTiles = map.addTilesetImage('GrassImage', 'grass_img', 32, 32)
+        const wallTiles = map.addTilesetImage('WallImage', 'wall_img', 32, 32)
 
-        //  Add tilesets from images (<tileset name from tiled>,<image>)
-        const grass_tiles = map.addTilesetImage('GrassImage', 'grass_img',32,32) 
-        const wall_tiles = map.addTilesetImage('WallImage','wall_img',32,32)
-
-        //  Add tilesets as layer to map (<layer name from tiled>,<tileset variable>)
-        map.createLayer('Grass', grass_tiles).setScale(2)
-        this.walls_layer = map.createLayer('Walls', wall_tiles).setScale(2)
-
+        map.createLayer('Grass', grassTiles).setScale(2)
+        this.walls_layer = map.createLayer('Walls', wallTiles).setScale(2)
         this.walls_layer.setCollisionByProperty({collides: true})
-        
-        //create animations
+
         createCharacterAnims(this.anims)
 
-        //create john
         this.john = new John(this, 700, 500, 'john', 'walk_down1.png')
-        
-        //add enemies
+
         this.enemies = this.physics.add.group()
+        this.spawnPositions = [
+            [150, 150],
+            [1650, 150],
+            [1650, 850],
+            [150, 850],
+            [900, 100],
+            [900, 900],
+        ]
 
-        const slimeball = new Slimeball(this, 100, 300, 'slimeball').setName('slime1')
-        const slimeball2 = new Slimeball(this, 500,400, 'slimeball').setName('slime2')
-        this.enemies.addMultiple([slimeball, slimeball2])
-        // var enemyStartPositions = this.findObjectsByType('enemyStart', this.map, 'objectLayer'); keep in mind for the future
+        this.waveManager = new WaveManager(this)
+        this.waveManager.nextWave()
+        this.waveInProgress = true
+        this.spawnWave()
 
-        //create world
-        this.physics.world.setBounds(0,0,map.widthInPixels * 2, map.heightInPixels * 2)
+        this.physics.world.setBounds(0, 0, map.widthInPixels * 2, map.heightInPixels * 2)
 
-        //camera
         const camera = this.cameras.main
         camera.setSize(this.scale.width, this.scale.height)
-        camera.setBounds(0,0, map.widthInPixels * 2, map.heightInPixels * 2)
-        camera.startFollow(this.john, true, 1,1)
+        camera.setBounds(0, 0, map.widthInPixels * 2, map.heightInPixels * 2)
+        camera.startFollow(this.john, true, 1, 1)
 
-        //container
         this.hpArr = []
         for (let i = 0; i < this.john.maxHp; i++) {
-            const heart = this.add.sprite(this.hpBar.initialX + this.hpBar.spacing * i, this.scale.height - 50, 'heart_half').setDisplaySize(this.hpBar.heartSizeX, this.hpBar.heartSizeY)
+            const heart = this.add.sprite(
+                this.hpBar.initialX + this.hpBar.spacing * i,
+                this.scale.height - 50,
+                'heart_half'
+            ).setDisplaySize(this.hpBar.heartSizeX, this.hpBar.heartSizeY)
             this.hpArr.push(heart)
             heart.anims.play('heart-full-idle', true)
         }
+
         this.hud = this.add.container(0, 0, this.hpArr)
         this.hud.setScrollFactor(0)
-        
-        this.add.sprite(800,500, 'lightsaber').setDisplaySize(60,60)
 
-        //weapons
         this.fireballs = this.physics.add.group({maxSize: 10, allowGravity: false})
         this.john.setFireballs(this.fireballs)
 
-        //add colliders
         this.physics.add.collider(this.john, this.walls_layer)
         this.physics.add.collider(this.enemies, this.enemies)
         this.physics.add.collider(this.enemies, this.walls_layer)
@@ -100,15 +100,51 @@ class Level1 extends Phaser.Scene{
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onSceneShutdown, this)
     }
     
-    update(t,dt)
-    {
+    update(){
         this.updateEnemies()
         this.john.update(this.controls)
         this.john.checkIfDead()
+
+        if (!this.waveTransitioning && this.waveInProgress) {
+            const activeEnemies = this.enemies.getChildren().filter((enemy) => enemy.active)
+            if (activeEnemies.length === 0 && this.waveManager.enemiesDefeated >= this.waveManager.enemiesInWave) {
+                this.waveInProgress = false
+                this.waveTransitioning = true
+                this.queueWaveCountdown()
+            }
+        }
+
+        this.updateHUD()
     }
 
-    updateEnemies()
-    {
+    queueWaveCountdown() {
+        if (this.waveStatusText) {
+            this.waveStatusText.setText('Wave cleared!')
+            this.waveStatusText.setVisible(true)
+        }
+
+        this.waveClearDelayEvent = this.time.delayedCall(WAVE_CLEAR_HOLD_MS, () => {
+            this.triggerWaveComplete()
+        })
+    }
+
+    spawnWave() {
+        const enemyCount = this.waveManager.enemiesInWave
+        const healthMod = this.waveManager.getEnemyHealthModifier(this.waveManager.currentWave)
+        const speedMod = this.waveManager.getEnemySpeedModifier(this.waveManager.currentWave)
+
+        for (let i = 0; i < enemyCount; i++) {
+            const spawnPos = this.spawnPositions[i % this.spawnPositions.length]
+            const enemy = new Slimeball(this, spawnPos[0], spawnPos[1], 'slimeball')
+                .setName(`slime_wave${this.waveManager.currentWave}_${i}`)
+
+            enemy.health = Math.ceil(10 * healthMod)
+            Slimeball.speed = Math.ceil(100 * speedMod)
+            this.enemies.add(enemy)
+        }
+    }
+
+    updateEnemies(){
         const activeEnemies = this.enemyOrderBuffer
         activeEnemies.length = 0
 
@@ -118,7 +154,6 @@ class Level1 extends Phaser.Scene{
 
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i]
-
             if (!enemy.active || !enemy.body?.enable) {
                 continue
             }
@@ -141,21 +176,22 @@ class Level1 extends Phaser.Scene{
             const enemySpacingSq = (dx * dx) + (dy * dy)
 
             if (enemySpacingSq < ENEMY_SPACING_THRESHOLD_SQ) {
-                const relativeAngleInX = currentEnemy.body.velocity.angle() - nextEnemy.body.velocity.angle()
-
-                if (relativeAngleInX >= 0) nextEnemy.body.velocity.rotate(0.35)
-                else nextEnemy.body.velocity.rotate(-0.35)
+                const relativeAngle = currentEnemy.body.velocity.angle() - nextEnemy.body.velocity.angle()
+                if (relativeAngle >= 0) {
+                    nextEnemy.body.velocity.rotate(0.35)
+                } else {
+                    nextEnemy.body.velocity.rotate(-0.35)
+                }
             }
         }
     }
 
-    handleEnemyTouch(john, enemy)
-    {
+    handleEnemyTouch(john, enemy){
         enemy.handleTouchPlayer(this)
+        this.waveManager.recordDamage()
     }
 
-    recycleFireball(fireball)
-    {
+    recycleFireball(fireball){
         if (!fireball?.body) {
             return
         }
@@ -169,15 +205,14 @@ class Level1 extends Phaser.Scene{
         fireball.disableBody(true, true)
     }
 
-    hitEnemy(fireball, enemy)
-    {  
+    hitEnemy(fireball, enemy){
         if (!enemy?.active) {
             this.recycleFireball(fireball)
             return
         }
 
-        const dx = enemy.x - fireball.x;
-        const dy = enemy.y - fireball.y;
+        const dx = enemy.x - fireball.x
+        const dy = enemy.y - fireball.y
         const distance = Math.hypot(dx, dy) || 1
         const dir = {
             x: (dx / distance) * 200,
@@ -185,40 +220,116 @@ class Level1 extends Phaser.Scene{
         }
 
         this.recycleFireball(fireball)
-        enemy.takeDmg(enemy, 5, this, dir) /*change later fireball dmg*/
+
+        const hadHealth = enemy.health > 0
+        enemy.takeDmg(enemy, 5, this, dir)
+
+        if (hadHealth && enemy.health <= 0) {
+            this.waveManager.incrementEnemyDefeated()
+        }
     }
 
-    handleResize(gameSize)
-    {
-        const { width, height } = gameSize
+    updateHUD(){
+        if (!this.waveText) {
+            this.waveText = this.add.text(
+                this.hpBar.initialX,
+                this.scale.height - 120,
+                '',
+                { color: '#ffffff', fontSize: '18px', fontStyle: 'bold' }
+            ).setScrollFactor(0)
+        }
 
+        this.waveText.setText(`Wave: ${this.waveManager.currentWave} | Enemies: ${this.waveManager.enemiesDefeated}/${this.waveManager.enemiesInWave}`)
+
+        if (!this.scoreText) {
+            this.scoreText = this.add.text(
+                this.scale.width / 2,
+                this.scale.height - 50,
+                '',
+                { color: '#00ff00', fontSize: '16px' }
+            ).setScrollFactor(0).setOrigin(0.5, 1)
+        }
+        this.scoreText.setText(`Score: ${this.waveManager.score}`)
+
+        if (!this.highScoreText) {
+            this.highScoreText = this.add.text(
+                this.scale.width - 20,
+                this.scale.height - 50,
+                '',
+                { color: '#ffff00', fontSize: '16px' }
+            ).setScrollFactor(0).setOrigin(1, 1)
+        }
+        this.highScoreText.setText(`High Score: ${this.waveManager.highScore}`)
+
+        if (!this.waveStatusText) {
+            this.waveStatusText = this.add.text(
+                this.scale.width / 2,
+                this.scale.height / 2 - 40,
+                '',
+                { color: '#00ff88', fontSize: '42px', fontStyle: 'bold' }
+            ).setOrigin(0.5).setScrollFactor(0).setDepth(100)
+        }
+    }
+
+    triggerWaveComplete(){
+        if (this.waveStatusText) {
+            this.waveStatusText.setVisible(false)
+        }
+
+        this.scene.pause()
+        this.scene.launch('WaveComplete', {
+            waveNumber: this.waveManager.currentWave,
+            nextWaveEnemies: this.waveManager.getEnemiesForWave(this.waveManager.currentWave + 1),
+            score: this.waveManager.score,
+            level1Scene: this,
+        })
+    }
+
+    startNextWave(){
+        this.waveManager.nextWave()
+        this.waveManager.enemiesDefeated = 0
+        this.spawnWave()
+        this.waveInProgress = true
+        this.waveTransitioning = false
+    }
+
+    showGameOver(){
+        this.scene.pause()
+        this.scene.launch('Statistics', {
+            stats: this.waveManager.getSessionStats(),
+        })
+    }
+
+    handleResize(gameSize){
+        const { width, height } = gameSize
         this.cameras.main.setSize(width, height)
 
-        if (!this.hpArr) {
-            return
+        if (this.hpArr) {
+            for (let i = 0; i < this.hpArr.length; i++) {
+                this.hpArr[i]
+                    .setPosition(this.hpBar.initialX + this.hpBar.spacing * i, height - 50)
+                    .setDisplaySize(this.hpBar.heartSizeX, this.hpBar.heartSizeY)
+            }
         }
 
-        for (let i = 0; i < this.hpArr.length; i++) {
-            this.hpArr[i]
-                .setPosition(this.hpBar.initialX + this.hpBar.spacing * i, height - 50)
-                .setDisplaySize(this.hpBar.heartSizeX, this.hpBar.heartSizeY)
+        if (this.scoreText) {
+            this.scoreText.setPosition(width / 2, height - 50)
+        }
+        if (this.highScoreText) {
+            this.highScoreText.setPosition(width - 20, height - 50)
+        }
+        if (this.waveStatusText) {
+            this.waveStatusText.setPosition(width / 2, height / 2 - 40)
         }
     }
 
-    onSceneShutdown()
-    {
+    onSceneShutdown(){
         this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this)
-    }
-
-    showMapBarriers() 
-    {
-        // shows collision terrain  
-        const debugGraphics = this.add.graphics().setAlpha(0.7)
-        this.walls_layer.renderDebug(debugGraphics, {
-            tileColor: null,
-            collidingTileColor: new Phaser.Display.Color(243,134,48,255),
-            faceColor: new Phaser.Display.Color(40,39,37,255)
-        })
+        if (this.waveClearDelayEvent) {
+            this.waveClearDelayEvent.remove(false)
+            this.waveClearDelayEvent = null
+        }
+        this.waveManager?.saveHighScore()
     }
 }
 
